@@ -11,6 +11,9 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.Request;
@@ -29,6 +32,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -43,16 +47,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback,GoogleApiClient.ConnectionCallbacks,GoogleApiClient.OnConnectionFailedListener,LocationListener {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback,GoogleApiClient.ConnectionCallbacks,GoogleApiClient.OnConnectionFailedListener,LocationListener,GoogleMap.OnMarkerClickListener {
     static int i=0;
+    TextView distanceText,durationText;
     GoogleApiClient mGoogleApiClient;
     Handler h;
     Runnable IterateInstructions;
     GoogleMap map;
+    Marker TruckMarker;
     LatLng source,destination;
     LocationRequest mLocationRequest;
     String LOCATION_REQUEST_URL="https://api.myjson.com/bins/11ds3p";
     String HIT_URL;
+    String DISTANCE_MATRIX_URL;
     @Override
     protected void onResume()
     {
@@ -62,78 +69,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void run() {
                 Toast.makeText(getApplicationContext(),"Refreshing location",Toast.LENGTH_LONG).show();
-                final Marker marker;
-                RequestQueue getCoordinatesQueue=Volley.newRequestQueue(MainActivity.this);
-                JsonObjectRequest coordinatesJSON=new JsonObjectRequest(Request.Method.GET, LOCATION_REQUEST_URL, null, new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            JSONObject customerAddressJSON=response.getJSONObject("customerAddress");
-                            JSONObject currentTruckLocationJSON=response.getJSONObject("truckLocation");
-                            Double customerLocationLattitude=Double.parseDouble(customerAddressJSON.getString("lat"));
-                            Double customerLocationLongitude=Double.parseDouble(customerAddressJSON.getString("long"));
-                            Double currentTruckLocationLattitude=Double.parseDouble(currentTruckLocationJSON.getString("lat"));
-                            Double currentTruckLocationLongitude=Double.parseDouble(currentTruckLocationJSON.getString("long"));
-                            source=new LatLng(currentTruckLocationLattitude,currentTruckLocationLongitude);
-                            destination=new LatLng(customerLocationLattitude,customerLocationLongitude);
-                            map.clear();
-                            map.addMarker(new MarkerOptions().position(source).title("Your Truck"));
-                            map.addMarker(new MarkerOptions().position(destination).title("Delivery Location"));
-                            getAndPrintDirectionsApi(source,destination);
-                            if(i==0) {
-                                i++;
-                                map.moveCamera(CameraUpdateFactory.newLatLngZoom(source, 10));
-                                map.animateCamera(CameraUpdateFactory.zoomTo(8), 2000, null);
-                            }
-
-                        } catch (JSONException e) {
-                            Toast.makeText(getApplicationContext(),"Error in Parsing JSON",Toast.LENGTH_LONG).show();
-                            e.printStackTrace();
-                        }
-
-                    }
-                }, new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Toast.makeText(getApplicationContext(),"Volley Error :"+error.getMessage().toString(),Toast.LENGTH_LONG).show();
-
-                    }
-                });
-                getCoordinatesQueue.add(coordinatesJSON);
-                if (ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    return;
-                }
-                map.setMyLocationEnabled(true);
-                map.setTrafficEnabled(true);
-                map.setIndoorEnabled(true);
-                map.setBuildingsEnabled(true);
-                map.getUiSettings().setZoomControlsEnabled(true);
-                h.postDelayed(this,10000);
-            }
-        };
-        h.postDelayed(IterateInstructions,10000);
-        }
-        super.onResume();
-
-    }
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
-    }
-    @Override
-    public void onMapReady(final GoogleMap googleMap) {
-        map=googleMap;
-        h=new Handler();
-        IterateInstructions=new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(getApplicationContext(),"Refreshing location",Toast.LENGTH_LONG).show();
-                map=googleMap;
                 Marker marker;
+                map.setOnMarkerClickListener(MainActivity.this);
                 RequestQueue getCoordinatesQueue=Volley.newRequestQueue(MainActivity.this);
                 JsonObjectRequest coordinatesJSON=new JsonObjectRequest(Request.Method.GET, LOCATION_REQUEST_URL, null, new Response.Listener<JSONObject>() {
                     @Override
@@ -151,6 +88,85 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             //googleMap.addMarker(new MarkerOptions().position(source).title("Your Truck"));
                             //googleMap.addMarker(new MarkerOptions().position(destination).title("Delivery Location"));
                             getAndPrintDirectionsApi(source,destination);
+                            SetTimeAndDistance(source,destination);
+                            if(i==0) {
+                                i++;
+                                map.moveCamera(CameraUpdateFactory.newLatLngZoom(source, 10));
+                                map.animateCamera(CameraUpdateFactory.zoomTo(8), 2000, null);
+                            }
+
+                        } catch (JSONException e) {
+                            Toast.makeText(getApplicationContext(),"Error in Parsing JSON",Toast.LENGTH_LONG).show();
+                            e.printStackTrace();
+                        }
+
+                    }
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.d("Error Resopnse","error");
+                       Toast.makeText(getApplicationContext(),"Network Error, Rerequesting coordinates...",Toast.LENGTH_LONG).show();
+
+                    }
+                });
+                getCoordinatesQueue.add(coordinatesJSON);
+                if (ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    return;
+                }
+                map.setMyLocationEnabled(true);
+                map.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+                //googleMap.setTrafficEnabled(true);
+                //googleMap.setIndoorEnabled(true);
+                //googleMap.setBuildingsEnabled(true);
+                map.getUiSettings().setZoomControlsEnabled(true);
+                h.postDelayed(this,10000);
+
+            }
+        };
+        h.postDelayed(IterateInstructions,10000);
+        }
+        super.onResume();
+
+    }
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        distanceText=(TextView)findViewById(R.id.tvdisplaydistance);
+        durationText=(TextView)findViewById(R.id.tvdisplaytime);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+    }
+    @Override
+    public void onMapReady(final GoogleMap googleMap) {
+        map=googleMap;
+        h=new Handler();
+        IterateInstructions=new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getApplicationContext(),"Refreshing location",Toast.LENGTH_LONG).show();
+                map=googleMap;
+                Marker marker;
+                map.setOnMarkerClickListener(MainActivity.this);
+                RequestQueue getCoordinatesQueue=Volley.newRequestQueue(MainActivity.this);
+                JsonObjectRequest coordinatesJSON=new JsonObjectRequest(Request.Method.GET, LOCATION_REQUEST_URL, null, new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            JSONObject customerAddressJSON=response.getJSONObject("customerAddress");
+                            JSONObject currentTruckLocationJSON=response.getJSONObject("truckLocation");
+                            Double customerLocationLattitude=Double.parseDouble(customerAddressJSON.getString("lat"));
+                            Double customerLocationLongitude=Double.parseDouble(customerAddressJSON.getString("long"));
+                            Double currentTruckLocationLattitude=Double.parseDouble(currentTruckLocationJSON.getString("lat"));
+                            Double currentTruckLocationLongitude=Double.parseDouble(currentTruckLocationJSON.getString("long"));
+                            source=new LatLng(currentTruckLocationLattitude,currentTruckLocationLongitude);
+                            destination=new LatLng(customerLocationLattitude,customerLocationLongitude);
+                            //googleMap.clear();
+                            //googleMap.addMarker(new MarkerOptions().position(source).title("Your Truck"));
+                            //googleMap.addMarker(new MarkerOptions().position(destination).title("Delivery Location"));
+                            getAndPrintDirectionsApi(source,destination);
+                            SetTimeAndDistance(source,destination);
                             if(i==0) {
                                 i++;
                                 googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(source, 10));
@@ -166,7 +182,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }, new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Toast.makeText(getApplicationContext(),"Volley Error :"+error.getMessage().toString(),Toast.LENGTH_LONG).show();
+                        Toast.makeText(getApplicationContext(),"Network error Rerequesting coordinates",Toast.LENGTH_LONG).show();
 
                     }
                 });
@@ -175,9 +191,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     return;
                 }
                 googleMap.setMyLocationEnabled(true);
-                googleMap.setTrafficEnabled(true);
-                googleMap.setIndoorEnabled(true);
-                googleMap.setBuildingsEnabled(true);
+                map.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+               //googleMap.setTrafficEnabled(true);
+                //googleMap.setIndoorEnabled(true);
+                //googleMap.setBuildingsEnabled(true);
                 googleMap.getUiSettings().setZoomControlsEnabled(true);
                 h.postDelayed(this,10000);
 
@@ -241,7 +258,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             polyLineOptions.color(Color.BLUE);
                         }
                         map.clear();
-                        map.addMarker(new MarkerOptions().position(source1).title("Your Truck"));
+                        TruckMarker=map.addMarker(new MarkerOptions().position(source1).title("Your Truck").icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_action_name)));
                         map.addMarker(new MarkerOptions().position(destination1).title("Delivery Location"));
                         map.addPolyline(polyLineOptions);
                     }
@@ -261,15 +278,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    private String generateApiUrl(LatLng origin, LatLng dest) {
-        String str_origin = "origin="+origin.latitude+","+origin.longitude;
-        String str_dest = "destination="+dest.latitude+","+dest.longitude;
-        String sensor = "sensor=false";
-        String parameters = str_origin+"&"+str_dest+"&"+sensor;
-        String output = "json";
-        String url = "https://maps.googleapis.com/maps/api/directions/"+output+"?"+parameters;
-        return url;
-    }
 
     protected void buildGoogleClientApi()
     {
@@ -317,5 +325,69 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Toast.makeText(getApplicationContext(),"Runnable stopped",Toast.LENGTH_LONG).show();
         super.onBackPressed();
 
+    }
+    public String generateDistanceMatrixURL(LatLng source,LatLng destination)
+    {
+        String URL="https://maps.googleapis.com/maps/api/distancematrix/json?";
+        String queryParams="origins="+source.latitude+","+source.longitude+"&"+"destinations="+destination.latitude+","+destination.longitude;
+        return  URL+queryParams;
+    }
+    private String generateApiUrl(LatLng origin, LatLng dest) {
+        String str_origin = "origin="+origin.latitude+","+origin.longitude;
+        String str_dest = "destination="+dest.latitude+","+dest.longitude;
+        String sensor = "sensor=false";
+        String parameters = str_origin+"&"+str_dest+"&"+sensor;
+        String output = "json";
+        String url = "https://maps.googleapis.com/maps/api/directions/"+output+"?"+parameters;
+        return url;
+    }
+
+    public void SetTimeAndDistance(LatLng source,LatLng destination)
+    {
+        DISTANCE_MATRIX_URL=generateDistanceMatrixURL(source,destination);
+        final RequestQueue requestQueue=Volley.newRequestQueue(MainActivity.this);
+        JsonObjectRequest getTimeAndDistance=new JsonObjectRequest(Request.Method.GET, DISTANCE_MATRIX_URL, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                JSONArray rows = null;
+                JSONObject rowsJSON=null;
+                JSONArray elements=null;
+                JSONObject elementsJSON=null;
+                JSONObject distanceJSON,durationJSON;
+                try {
+                    rows=response.getJSONArray("rows");
+                    rowsJSON=rows.getJSONObject(0);
+                    elements=rowsJSON.getJSONArray("elements");
+                    elementsJSON=elements.getJSONObject(0);
+                    distanceJSON=elementsJSON.getJSONObject("distance");
+                    durationJSON=elementsJSON.getJSONObject("duration");
+                    distanceText.setText("DISTANCE : "+distanceJSON.getString("text"));
+                    durationText.setText("ETA : "+durationJSON.getString("text"));
+                    distanceText.setVisibility(View.GONE);
+                    durationText.setVisibility(View.GONE);
+                }
+                catch (JSONException e) {
+                    Toast.makeText(getApplicationContext(),"JSON Parse error",Toast.LENGTH_LONG).show();
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                    Toast.makeText(getApplicationContext(),"Network error,Rerequesting coordinates",Toast.LENGTH_LONG).show();
+            }
+        });
+        requestQueue.add(getTimeAndDistance);
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        if (marker.equals(TruckMarker))
+        {
+            Toast.makeText(getApplicationContext(),"Stay cool your truck is on the way",Toast.LENGTH_LONG).show();
+            distanceText.setVisibility(View.VISIBLE);
+        }
+
+        return false;
     }
 }
