@@ -1,5 +1,6 @@
 package com.example.sangameswaran.mapdemo;
 
+
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
