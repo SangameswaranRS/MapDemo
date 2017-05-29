@@ -1,5 +1,6 @@
 package com.example.sangameswaran.mapdemo;
 
+import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
@@ -45,11 +46,76 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback,GoogleApiClient.ConnectionCallbacks,GoogleApiClient.OnConnectionFailedListener,LocationListener {
     static int i=0;
     GoogleApiClient mGoogleApiClient;
+    Handler h;
+    Runnable IterateInstructions;
     GoogleMap map;
     LatLng source,destination;
     LocationRequest mLocationRequest;
     String LOCATION_REQUEST_URL="https://api.myjson.com/bins/11ds3p";
-    String HIT_URL="https://maps.googleapis.com/maps/api/directions/json?origin=8.526304,77.867730&destination=9.526304,77.867730&sensor=false&mode=driving";
+    String HIT_URL;
+    @Override
+    protected void onResume()
+    {
+        if(map!=null){
+        Toast.makeText(getApplicationContext(),"Runnable restarted",Toast.LENGTH_LONG).show();
+        IterateInstructions=new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getApplicationContext(),"Refreshing location",Toast.LENGTH_LONG).show();
+                final Marker marker;
+                RequestQueue getCoordinatesQueue=Volley.newRequestQueue(MainActivity.this);
+                JsonObjectRequest coordinatesJSON=new JsonObjectRequest(Request.Method.GET, LOCATION_REQUEST_URL, null, new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            JSONObject customerAddressJSON=response.getJSONObject("customerAddress");
+                            JSONObject currentTruckLocationJSON=response.getJSONObject("truckLocation");
+                            Double customerLocationLattitude=Double.parseDouble(customerAddressJSON.getString("lat"));
+                            Double customerLocationLongitude=Double.parseDouble(customerAddressJSON.getString("long"));
+                            Double currentTruckLocationLattitude=Double.parseDouble(currentTruckLocationJSON.getString("lat"));
+                            Double currentTruckLocationLongitude=Double.parseDouble(currentTruckLocationJSON.getString("long"));
+                            source=new LatLng(currentTruckLocationLattitude,currentTruckLocationLongitude);
+                            destination=new LatLng(customerLocationLattitude,customerLocationLongitude);
+                            map.clear();
+                            map.addMarker(new MarkerOptions().position(source).title("Your Truck"));
+                            map.addMarker(new MarkerOptions().position(destination).title("Delivery Location"));
+                            getAndPrintDirectionsApi(source,destination);
+                            if(i==0) {
+                                i++;
+                                map.moveCamera(CameraUpdateFactory.newLatLngZoom(source, 10));
+                                map.animateCamera(CameraUpdateFactory.zoomTo(8), 2000, null);
+                            }
+
+                        } catch (JSONException e) {
+                            Toast.makeText(getApplicationContext(),"Error in Parsing JSON",Toast.LENGTH_LONG).show();
+                            e.printStackTrace();
+                        }
+
+                    }
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Toast.makeText(getApplicationContext(),"Volley Error :"+error.getMessage().toString(),Toast.LENGTH_LONG).show();
+
+                    }
+                });
+                getCoordinatesQueue.add(coordinatesJSON);
+                if (ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    return;
+                }
+                map.setMyLocationEnabled(true);
+                map.setTrafficEnabled(true);
+                map.setIndoorEnabled(true);
+                map.setBuildingsEnabled(true);
+                map.getUiSettings().setZoomControlsEnabled(true);
+                h.postDelayed(this,10000);
+            }
+        };
+        h.postDelayed(IterateInstructions,10000);
+        }
+        super.onResume();
+
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -57,19 +123,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
     }
     @Override
     public void onMapReady(final GoogleMap googleMap) {
-
-       final Handler h=new Handler();
-        h.postDelayed(new Runnable() {
+        map=googleMap;
+        h=new Handler();
+        IterateInstructions=new Runnable() {
             @Override
             public void run() {
-                googleMap.clear();
+                Toast.makeText(getApplicationContext(),"Refreshing location",Toast.LENGTH_LONG).show();
                 map=googleMap;
-                //buildGoogleClientApi();
-                //Toast.makeText(getApplicationContext(),"RunnableThread"+i,Toast.LENGTH_LONG).show();
                 Marker marker;
                 RequestQueue getCoordinatesQueue=Volley.newRequestQueue(MainActivity.this);
                 JsonObjectRequest coordinatesJSON=new JsonObjectRequest(Request.Method.GET, LOCATION_REQUEST_URL, null, new Response.Listener<JSONObject>() {
@@ -84,6 +147,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             Double currentTruckLocationLongitude=Double.parseDouble(currentTruckLocationJSON.getString("long"));
                             source=new LatLng(currentTruckLocationLattitude,currentTruckLocationLongitude);
                             destination=new LatLng(customerLocationLattitude,customerLocationLongitude);
+                            googleMap.clear();
                             googleMap.addMarker(new MarkerOptions().position(source).title("Your Truck"));
                             googleMap.addMarker(new MarkerOptions().position(destination).title("Delivery Location"));
                             getAndPrintDirectionsApi(source,destination);
@@ -115,9 +179,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 googleMap.setIndoorEnabled(true);
                 googleMap.setBuildingsEnabled(true);
                 googleMap.getUiSettings().setZoomControlsEnabled(true);
-                h.postDelayed(this,8000);
+                h.postDelayed(this,10000);
+
             }
-        },2000);
+        };
+        h.postDelayed(IterateInstructions,2000);
     }
 
     private void getAndPrintDirectionsApi(LatLng source, LatLng destination) {
@@ -143,10 +209,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 List<LatLng> list = PolyUtil.decode(polyline);
                                 for (int l = 0; l < list.size(); l++) {
                                     HashMap<String, String> hm = new HashMap<String, String>();
-                                    hm.put("lat",
-                                            Double.toString(((LatLng) list.get(l)).latitude));
-                                    hm.put("lng",
-                                            Double.toString(((LatLng) list.get(l)).longitude));
+                                    hm.put("lat", Double.toString(((LatLng) list.get(l)).latitude));
+                                    hm.put("lng", Double.toString(((LatLng) list.get(l)).longitude));
                                     path.add(hm);
                                 }
                             }
@@ -235,5 +299,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onLocationChanged(Location location) {
         map.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(),location.getLongitude())).title("My Location"));
+    }
+
+    @Override
+    protected void onPause() {
+        h.removeCallbacks(IterateInstructions);
+        Toast.makeText(getApplicationContext(),"Runnable stopped",Toast.LENGTH_LONG).show();
+        super.onPause();
+    }
+
+
+    @Override
+    public void onBackPressed() {
+        h.removeCallbacks(IterateInstructions);
+        Toast.makeText(getApplicationContext(),"Runnable stopped",Toast.LENGTH_LONG).show();
+        super.onBackPressed();
+
     }
 }
