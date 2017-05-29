@@ -1,6 +1,5 @@
 package com.example.sangameswaran.mapdemo;
 
-import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
@@ -71,7 +70,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Toast.makeText(getApplicationContext(),"Refreshing location",Toast.LENGTH_LONG).show();
                 Marker marker;
                 map.setOnMarkerClickListener(MainActivity.this);
-                RequestQueue getCoordinatesQueue=Volley.newRequestQueue(MainActivity.this);
+               RequestQueue getCoordinatesQueue=Volley.newRequestQueue(MainActivity.this);
                 JsonObjectRequest coordinatesJSON=new JsonObjectRequest(Request.Method.GET, LOCATION_REQUEST_URL, null, new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
@@ -91,8 +90,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             SetTimeAndDistance(source,destination);
                             if(i==0) {
                                 i++;
-                                map.moveCamera(CameraUpdateFactory.newLatLngZoom(source, 10));
-                                map.animateCamera(CameraUpdateFactory.zoomTo(8), 2000, null);
+                                map.moveCamera(CameraUpdateFactory.newLatLngZoom(source, 21));
+                                map.animateCamera(CameraUpdateFactory.zoomTo(21), 1000, null);
                             }
 
                         } catch (JSONException e) {
@@ -113,6 +112,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if (ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                     return;
                 }
+
+                if(i==0) {
+                    i++;
+                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(source, 10));
+                    map.animateCamera(CameraUpdateFactory.zoomTo(8), 2000, null);
+                }
                 map.setMyLocationEnabled(true);
                 map.setMapType(GoogleMap.MAP_TYPE_NORMAL);
                 //googleMap.setTrafficEnabled(true);
@@ -120,7 +125,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 //googleMap.setBuildingsEnabled(true);
                 map.getUiSettings().setZoomControlsEnabled(true);
                 h.postDelayed(this,10000);
-
             }
         };
         h.postDelayed(IterateInstructions,10000);
@@ -149,7 +153,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 map=googleMap;
                 Marker marker;
                 map.setOnMarkerClickListener(MainActivity.this);
-                RequestQueue getCoordinatesQueue=Volley.newRequestQueue(MainActivity.this);
+               RequestQueue getCoordinatesQueue=Volley.newRequestQueue(MainActivity.this);
                 JsonObjectRequest coordinatesJSON=new JsonObjectRequest(Request.Method.GET, LOCATION_REQUEST_URL, null, new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
@@ -363,8 +367,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     durationJSON=elementsJSON.getJSONObject("duration");
                     distanceText.setText("DISTANCE : "+distanceJSON.getString("text"));
                     durationText.setText("ETA : "+durationJSON.getString("text"));
-                    distanceText.setVisibility(View.GONE);
-                    durationText.setVisibility(View.GONE);
                 }
                 catch (JSONException e) {
                     Toast.makeText(getApplicationContext(),"JSON Parse error",Toast.LENGTH_LONG).show();
@@ -385,6 +387,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (marker.equals(TruckMarker))
         {
             Toast.makeText(getApplicationContext(),"Stay cool your truck is on the way",Toast.LENGTH_LONG).show();
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(source, 21));
+            map.animateCamera(CameraUpdateFactory.zoomTo(21), 1000, null);
             distanceText.setVisibility(View.VISIBLE);
         }
 
