@@ -147,9 +147,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             Double currentTruckLocationLongitude=Double.parseDouble(currentTruckLocationJSON.getString("long"));
                             source=new LatLng(currentTruckLocationLattitude,currentTruckLocationLongitude);
                             destination=new LatLng(customerLocationLattitude,customerLocationLongitude);
-                            googleMap.clear();
-                            googleMap.addMarker(new MarkerOptions().position(source).title("Your Truck"));
-                            googleMap.addMarker(new MarkerOptions().position(destination).title("Delivery Location"));
+                            //googleMap.clear();
+                            //googleMap.addMarker(new MarkerOptions().position(source).title("Your Truck"));
+                            //googleMap.addMarker(new MarkerOptions().position(destination).title("Delivery Location"));
                             getAndPrintDirectionsApi(source,destination);
                             if(i==0) {
                                 i++;
@@ -187,6 +187,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void getAndPrintDirectionsApi(LatLng source, LatLng destination) {
+        final LatLng source1=source;
+        final LatLng destination1=destination;
         HIT_URL=generateApiUrl(source,destination);
         RequestQueue requestQueue= Volley.newRequestQueue(this);
         JsonObjectRequest jsonObjectRequest=new JsonObjectRequest(Request.Method.GET, HIT_URL, null, new Response.Listener<JSONObject>() {
@@ -235,14 +237,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             }
 
                             polyLineOptions.addAll(points);
-                            polyLineOptions.width(4);
+                            polyLineOptions.width(10);
                             polyLineOptions.color(Color.BLUE);
                         }
-
+                        map.clear();
+                        map.addMarker(new MarkerOptions().position(source1).title("Your Truck"));
+                        map.addMarker(new MarkerOptions().position(destination1).title("Delivery Location"));
                         map.addPolyline(polyLineOptions);
                     }
-
-
                 } catch (Exception e) {
                     Toast.makeText(getApplicationContext(), "Parse Error", Toast.LENGTH_LONG).show();
                     e.printStackTrace();
