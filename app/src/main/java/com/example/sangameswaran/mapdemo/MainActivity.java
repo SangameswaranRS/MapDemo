@@ -167,9 +167,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             Double currentTruckLocationLongitude=Double.parseDouble(currentTruckLocationJSON.getString("long"));
                             source=new LatLng(currentTruckLocationLattitude,currentTruckLocationLongitude);
                             destination=new LatLng(customerLocationLattitude,customerLocationLongitude);
-                            //googleMap.clear();
-                            //googleMap.addMarker(new MarkerOptions().position(source).title("Your Truck"));
-                            //googleMap.addMarker(new MarkerOptions().position(destination).title("Delivery Location"));
                             getAndPrintDirectionsApi(source,destination);
                             SetTimeAndDistance(source,destination);
                             if(i==0) {
@@ -254,7 +251,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 double lat = Double.parseDouble(point.get("lat"));
                                 double lng = Double.parseDouble(point.get("lng"));
                                 LatLng position = new LatLng(lat, lng);
-
                                 points.add(position);
                             }
 
@@ -282,7 +278,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
     }
-
 
     protected void buildGoogleClientApi()
     {
@@ -337,15 +332,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         String queryParams="origins="+source.latitude+","+source.longitude+"&"+"destinations="+destination.latitude+","+destination.longitude;
         return  URL+queryParams;
     }
-    private String generateApiUrl(LatLng origin, LatLng dest) {
-        String str_origin = "origin="+origin.latitude+","+origin.longitude;
-        String str_dest = "destination="+dest.latitude+","+dest.longitude;
-        String sensor = "sensor=false";
-        String parameters = str_origin+"&"+str_dest+"&"+sensor;
-        String output = "json";
-        String url = "https://maps.googleapis.com/maps/api/directions/"+output+"?"+parameters;
-        return url;
-    }
+
 
     public void SetTimeAndDistance(LatLng source,LatLng destination)
     {
@@ -382,6 +369,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
         requestQueue.add(getTimeAndDistance);
     }
+    private String generateApiUrl(LatLng origin, LatLng dest) {
+        String str_origin = "origin="+origin.latitude+","+origin.longitude;
+        String str_dest = "destination="+dest.latitude+","+dest.longitude;
+        String sensor = "sensor=false";
+        String parameters = str_origin+"&"+str_dest+"&"+sensor;
+        String output = "json";
+        String url = "https://maps.googleapis.com/maps/api/directions/"+output+"?"+parameters;
+        return url;
+    }
 
     @Override
     public boolean onMarkerClick(Marker marker) {
@@ -393,6 +389,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             distanceText.setVisibility(View.VISIBLE);
         }
 
-        return false;
+        return true;
     }
 }
