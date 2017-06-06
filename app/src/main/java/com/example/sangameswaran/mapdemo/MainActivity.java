@@ -65,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onResume()
     {
+        //stopService(svc);
         if(map!=null){
         Toast.makeText(getApplicationContext(),"Runnable restarted",Toast.LENGTH_LONG).show();
         IterateInstructions=new Runnable() {
@@ -140,7 +141,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         svc = new Intent(this, OverlayShowingService.class);
-        startService(svc);
+        //startService(svc);
         distanceText=(TextView)findViewById(R.id.tvdisplaydistance);
         durationText=(TextView)findViewById(R.id.tvdisplaytime);
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -318,6 +319,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     protected void onPause() {
+        startService(svc);
         if (h != null) {
             h.removeCallbacks(IterateInstructions);
             Toast.makeText(getApplicationContext(), "Runnable stopped", Toast.LENGTH_LONG).show();
@@ -327,12 +329,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        //stopService(svc);
+    }
+
     @Override
     public void onBackPressed() {
         if(h!=null){
         h.removeCallbacks(IterateInstructions);
         Toast.makeText(getApplicationContext(),"Runnable stopped",Toast.LENGTH_LONG).show();
-        stopService(svc);
+        //stopService(svc);
         super.onBackPressed();
         }
     }
@@ -399,6 +408,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             distanceText.setVisibility(View.VISIBLE);
         }
 
-        return true;
+        return false;
     }
 }

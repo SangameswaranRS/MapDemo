@@ -134,11 +134,11 @@ public class OverlayShowingService extends Service implements View.OnTouchListen
         intent.setComponent(new ComponentName("com.example.sangameswaran.mapdemo", "com.example.sangameswaran.mapdemo.MainActivity"));
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
+            stopForeground(true);
+            stopSelf();
         }catch(ActivityNotFoundException e){
             Toast.makeText(getApplicationContext(),"Encountered Activity not Found exception",Toast.LENGTH_LONG).show();
         }
-
-
         return false;
     }
 }
