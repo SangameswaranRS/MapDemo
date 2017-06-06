@@ -1,6 +1,8 @@
 package com.example.sangameswaran.mapdemo;
 
 import android.app.Service;
+import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -41,7 +43,7 @@ public class OverlayShowingService extends Service implements View.OnTouchListen
         wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
 
         overlayedButton = new Button(this);
-        overlayedButton.setText("Back To MapsDemo");
+        overlayedButton.setText("MapsDemo");
         overlayedButton.setOnTouchListener(this);
         overlayedButton.setBackgroundColor(Color.parseColor("#309229"));
         overlayedButton.setOnClickListener(new View.OnClickListener() {
@@ -86,7 +88,7 @@ public class OverlayShowingService extends Service implements View.OnTouchListen
     public boolean onTouch(View v, MotionEvent event) {
         Toast.makeText(getApplicationContext(),"Intent starting-OnTouch Listener",Toast.LENGTH_LONG).show();
 
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+        /*if (event.getAction() == MotionEvent.ACTION_DOWN) {
             float x = event.getRawX();
             float y = event.getRawY();
 
@@ -126,6 +128,16 @@ public class OverlayShowingService extends Service implements View.OnTouchListen
                 return true;
             }
         }
+*/
+        try{
+        Intent intent=new Intent();
+        intent.setComponent(new ComponentName("com.example.sangameswaran.mapdemo", "com.example.sangameswaran.mapdemo.MainActivity"));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+        }catch(ActivityNotFoundException e){
+            Toast.makeText(getApplicationContext(),"Encountered Activity not Found exception",Toast.LENGTH_LONG).show();
+        }
+
 
         return false;
     }

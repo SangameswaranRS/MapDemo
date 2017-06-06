@@ -265,6 +265,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         map.clear();
                         TruckMarker=map.addMarker(new MarkerOptions().position(source1).title("Your Truck").icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_action_name)));
                         map.addMarker(new MarkerOptions().position(destination1).title("Delivery Location"));
+                        TruckMarker.showInfoWindow();
                         map.addPolyline(polyLineOptions);
                     }
                 } catch (Exception e) {
@@ -317,19 +318,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     protected void onPause() {
-        h.removeCallbacks(IterateInstructions);
-        Toast.makeText(getApplicationContext(),"Runnable stopped",Toast.LENGTH_LONG).show();
+        if (h != null) {
+            h.removeCallbacks(IterateInstructions);
+            Toast.makeText(getApplicationContext(), "Runnable stopped", Toast.LENGTH_LONG).show();
+            super.onPause();
+        }
         super.onPause();
     }
 
 
     @Override
     public void onBackPressed() {
+        if(h!=null){
         h.removeCallbacks(IterateInstructions);
         Toast.makeText(getApplicationContext(),"Runnable stopped",Toast.LENGTH_LONG).show();
         stopService(svc);
         super.onBackPressed();
-
+        }
     }
     public String generateDistanceMatrixURL(LatLng source,LatLng destination)
     {
