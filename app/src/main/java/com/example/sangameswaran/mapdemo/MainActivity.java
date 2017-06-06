@@ -1,6 +1,7 @@
 package com.example.sangameswaran.mapdemo;
 
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
@@ -59,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     LocationRequest mLocationRequest;
     String LOCATION_REQUEST_URL="https://api.myjson.com/bins/11ds3p";
     String HIT_URL;
+    Intent svc;
     String DISTANCE_MATRIX_URL;
     @Override
     protected void onResume()
@@ -137,6 +139,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        svc = new Intent(this, OverlayShowingService.class);
+        startService(svc);
         distanceText=(TextView)findViewById(R.id.tvdisplaydistance);
         durationText=(TextView)findViewById(R.id.tvdisplaytime);
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -308,7 +312,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
     @Override
     public void onLocationChanged(Location location) {
-        map.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(),location.getLongitude())).title("My Location"));
+       // map.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(),location.getLongitude())).title("My Location"));
     }
 
     @Override
@@ -323,6 +327,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onBackPressed() {
         h.removeCallbacks(IterateInstructions);
         Toast.makeText(getApplicationContext(),"Runnable stopped",Toast.LENGTH_LONG).show();
+        stopService(svc);
         super.onBackPressed();
 
     }
