@@ -41,7 +41,6 @@ public class OverlayShowingService extends Service implements View.OnTouchListen
     public void onCreate() {
         super.onCreate();
         wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-
         overlayedButton = new Button(this);
         overlayedButton.setText("MapsDemo");
         overlayedButton.setOnTouchListener(this);
@@ -54,14 +53,14 @@ public class OverlayShowingService extends Service implements View.OnTouchListen
         });
 
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.TYPE_SYSTEM_ALERT, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, PixelFormat.TRANSLUCENT);
-        params.gravity = Gravity.LEFT | Gravity.TOP;
+        params.gravity = Gravity.RIGHT | Gravity.CENTER;
         params.x = 0;
         params.y = 0;
         wm.addView(overlayedButton, params);
 
         topLeftView = new View(this);
         WindowManager.LayoutParams topLeftParams = new WindowManager.LayoutParams(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.TYPE_SYSTEM_ALERT, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, PixelFormat.TRANSLUCENT);
-        topLeftParams.gravity = Gravity.LEFT | Gravity.TOP;
+        topLeftParams.gravity =  Gravity.RIGHT | Gravity.CENTER;
         topLeftParams.x = 0;
         topLeftParams.y = 100;
         topLeftParams.width = 0;
